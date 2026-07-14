@@ -1,0 +1,235 @@
+% FREUID Challenge 2026 — Technical Report
+% Compile: pdflatex freuid_technical_report.tex && bibtex freuid_technical_report && pdflatex freuid_technical_report && pdflatex freuid_technical_report
+
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{enumitem}
+
+\geometry{margin=2.5cm}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+}
+
+\newcommand{\teamname}{Brass}
+\newcommand{\kaggleteam}{Jacopo Bartoli}
+\newcommand{\contactemail}{bartolijacopo@gmail.com}
+\newcommand{\reportdate}{July 2026}
+
+\title{%
+  \textbf{The FREUID Challenge 2026}\\[0.4em]
+  \large Technical Report --- \teamname
+}
+\author{%
+  Jacopo Bartoli\textsuperscript{1} \quad
+  Jason Ravagli\textsuperscript{1}\\[0.3em]
+  \small\texttt{\contactemail}
+}
+\date{Report date: \reportdate}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+We present a domain-adversarial multiple instance learning (DA-MIL) approach to identity document fraud detection. Document images are resized to $672\times896$ pixels and tiled into a $3\times4$ grid of $224\times224$ patches. Each patch is processed by a frozen DINOv2 ViT-B/14 backbone, yielding 3\,072 patch tokens per document. Gated attention pooling identifies the most discriminative tokens and produces a bag embedding. A gradient reversal layer suppresses template-specific features during training, pushing the representation towards fraud signals that generalize across unseen document templates. Score calibration applies a sigmoid function directly to the MIL classification head output. The method achieves a FREUID score of \textbf{0.068} on the public leaderboard (lower is better). Full reproduction is provided via a Docker image with bundled weights, a GitHub repository (MIT License), and this report.
+\end{abstract}
+
+\noindent\textbf{Competition:} The FREUID Challenge 2026 (IJCAI-ECAI 2026)~\cite{freuid2026}\\
+\textbf{Kaggle team:} \kaggleteam\\
+\textbf{Code:} \url{https://github.com/JacopoBartoli/freuid-challenge} (commit \texttt{23e7b82a612be5d1b492d028fc95cd76d5c48fe0})\\
+
+% -------------------------------------------------------------------
+\section{Introduction}
+\label{sec:intro}
+
+The FREUID Challenge targets fraud detection in identity documents (passports, driving licences). Fraudulent samples span physical alterations and digital manipulations; the threat model encompasses print-and-capture attacks, digital retouching, and generative AI forgeries. A key difficulty is that fraud artefacts are local and visually subtle, while the overall document layout is strongly template-specific. Models that memorize template geometry generalize poorly to the held-out templates used in competition evaluation.
+
+We address both challenges simultaneously: multiple instance learning handles the locality of fraud signals without patch-level annotations, and domain adversarial training prevents the model from exploiting template identity as a shortcut.
+
+% -------------------------------------------------------------------
+\section{Method}
+\label{sec:method}
+
+\subsection{Overview}
+
+The pipeline has three stages: (1) resolution-preserving tiling, (2) frozen DINOv2 patch encoding, (3) domain-adversarial MIL classification.
+
+\subsection{Model Architecture}
+
+\paragraph{Tiling.}
+Each input image is resized to $672\times896$ pixels with bicubic interpolation and partitioned into a $3\times4$ grid of non-overlapping $224\times224$ tiles. Resizing to this intermediate resolution preserves significantly more document detail than a direct $224\times224$ resize.
+
+\paragraph{Feature extraction.}
+Each tile is independently encoded by a \textbf{frozen} DINOv2 ViT-B/14 backbone (\texttt{vit\_base\_patch14\_dinov2.lvd142m}, pretrained on LVD-142M~\cite{freuid2026}). With patch stride 14, each tile produces 256 spatial tokens of dimension $d=768$. The \texttt{[CLS]} token is discarded. The 12 tiles per image are concatenated to form a bag of $N = 3072$ tokens.
+
+\paragraph{Gated Attention MIL.}
+Given bag $\mathbf{H} = \{h_1, \ldots, h_N\} \in \mathbb{R}^{N \times d}$, attention weights are computed as:
+\[
+  a_k = \operatorname{softmax}_k\!\left(w^\top \bigl[\tanh(Vh_k) \odot \sigma(Uh_k)\bigr]\right)
+\]
+The bag embedding $z = \sum_k a_k h_k$ is passed to a linear classification head followed by sigmoid to produce a fraud probability in $[0,1]$. The MIL head has hidden dimension 256 and dropout 0.25, giving approximately 590\,K trainable parameters.
+
+\paragraph{Domain adversarial branch.}
+A gradient reversal layer (GRL)~\cite{freuid2026} placed between the bag embedding $z$ and a 5-class template classifier negates gradients scaled by $\lambda$ during back-propagation, suppressing template-specific features. The domain branch is inactive at inference time ($\lambda = 0$).
+
+\subsection{Training Objective and Procedure}
+
+The total loss is $\mathcal{L} = \mathcal{L}_\text{fraud} + \mathcal{L}_\text{domain}$, where $\mathcal{L}_\text{fraud}$ is binary cross-entropy with positive class weight 1.36 and $\mathcal{L}_\text{domain}$ is 5-class cross-entropy. The GRL weight follows:
+\[
+  \lambda(p) = \lambda_{\max} \cdot \left(\frac{2}{1 + e^{-\gamma p}} - 1\right), \quad \gamma = 10,\; \lambda_{\max} = 1.0
+\]
+where $p \in [0,1]$ is fractional training progress. Only the MIL head receives gradient updates; the DINOv2 backbone is frozen throughout.
+
+\subsection{Score Calibration}
+
+Raw MIL logits are passed through a sigmoid function, producing a fraud score in $[0,1]$ with no further post-processing. Higher scores indicate higher confidence of fraud, consistent with the Kaggle submission format.
+
+% -------------------------------------------------------------------
+\section{Data}
+\label{sec:data}
+
+\subsection{FREUID Training Set}
+
+We use the official FREUID training corpus exclusively. A metadata file mapping images to labels, document templates, and attack types is generated via \texttt{scripts/prepare\_metadata.py}. We apply \textbf{Protocol A}: an 85/15 stratified split by label. The 15\% validation split is used for early stopping (best checkpoint by validation FREUID score). Samples with attack type \texttt{print\_and\_capture} are excluded from training following the competition guidance.
+
+\subsection{External Data and Pre-Trained Models}
+
+\begin{center}
+\small
+\begin{tabular}{llll}
+  \toprule
+  Resource & Source & License & Use \\
+  \midrule
+  DINOv2 ViT-B/14 & Meta AI / timm & Apache 2.0 & Frozen feature extractor \\
+  (\texttt{vit\_base\_patch14\_dinov2.lvd142m}) & LVD-142M pretraining & & \\
+  \bottomrule
+\end{tabular}
+\end{center}
+
+No external datasets or additional training images were used.
+
+\subsection{Validation Strategy}
+
+Local validation uses Protocol A (85/15 stratified split). Protocol A is \emph{optimistic} because validation templates overlap with training; local FREUID scores substantially underestimate the true generalization gap. The public leaderboard score (0.068) is our primary performance measure.
+
+% -------------------------------------------------------------------
+\section{Inference}
+\label{sec:inference}
+
+At inference time $\lambda = 0$ (domain head inactive). Images are resized to $672\times896$, normalized with ImageNet statistics, and tiled as described in Section~\ref{sec:method}. All 12 tiles per document are passed through the backbone in a single batched forward pass. The attention MIL head aggregates the 3\,072 tokens and outputs a fraud score. Batch size is 8 documents (96 backbone tile passes per step).
+
+\paragraph{Docker entrypoint.}
+\begin{verbatim}
+docker run --gpus all --network none \
+    -v /path/to/test/images:/data:ro \
+    -v /path/to/output:/submissions \
+    freuid-inference:latest
+\end{verbatim}
+Output: \texttt{/submissions/submission.csv} with columns \texttt{id,label} (one row per image, id = filename stem). Inference on the public test subset (7\,821 images) completes in approximately 94 minutes on an NVIDIA GTX 1650 (4\,GB VRAM); see Section~\ref{sec:repro} for the full test set estimate.
+
+% -------------------------------------------------------------------
+\section{Results}
+\label{sec:results}
+
+\begin{table}[h]
+  \centering
+  \caption{Summary of results. The FREUID score~\cite{freuid2026} is $1 - 2 g_\text{AuDET} g_\text{APCER} / (g_\text{AuDET} + g_\text{APCER})$; lower is better.}
+  \label{tab:results}
+  \begin{tabular}{lcc}
+    \toprule
+    Method & FREUID $\downarrow$ & Notes \\
+    \midrule
+    AttentionMIL baseline, 5 ep    & 0.245 & No domain adversarial, $224\times224$ \\
+    AttentionMIL + whitening, 5 ep & 0.308 & Whitening hurts generalization \\
+    AttentionMIL baseline, 25 ep   & 0.228 & Longer training helps \\
+    DA-MIL, 25 ep                  & 0.195 & Domain adversarial, $224\times224$ \\
+    \midrule
+    \textbf{DA-MIL + tiling, ep 7} & \textbf{0.068} & $672\times896 \to 12$ tiles; \textbf{submitted} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The dominant improvement comes from tiling: preserving document resolution at $672\times896$ and splitting into 12 tiles reduces FREUID by 0.127 compared to DA-MIL without tiling. The tiled model reaches its best checkpoint at epoch 7 already.
+
+% -------------------------------------------------------------------
+\section{Reproducibility}
+\label{sec:repro}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Repository:} \url{https://github.com/JacopoBartoli/freuid-challenge}, commit \texttt{23e7b82a612be5d1b492d028fc95cd76d5c48fe0}, MIT License.
+  \item \textbf{Checkpoint:} \texttt{checkpoints/epoch-7.pt} (1.7\,MB MIL head only; DINOv2 backbone weights are not stored as they are frozen).
+  \item \textbf{Docker:} run \texttt{bash docker\_build.sh} to build \texttt{freuid-inference:latest}. DINOv2 weights are copied from the local HuggingFace cache into the image during build. No network access is required at runtime.
+  \item \textbf{Dependencies:} Python 3.10+, PyTorch 2.11, CUDA 12.8, timm $\geq$1.0, pandas, tqdm, Pillow. Full list in \texttt{pyproject.toml}.
+  \item \textbf{Runtime:} Full test set ($\sim$143K images including private) estimated at $\sim$28 hours on GTX 1650 (extrapolated from 94 min/7\,821 images); $\sim$4--5 hours on a modern mid-range GPU (RTX 3060 or better).
+  \item \textbf{Randomness:} No inference-time randomness. Training uses \texttt{--seed 42}; DataLoader shuffle is the only non-deterministic element.
+  \item \textbf{Network:} Inference container verified with \texttt{--network none}; all weights bundled in the image.
+\end{itemize}
+
+% -------------------------------------------------------------------
+\section{Team and Contributions}
+
+\begin{itemize}[noitemsep]
+  \item \textbf{Jacopo Bartoli} — DA-MIL training pipeline, online training script, Docker packaging, ablation study, report.
+  \item \textbf{Jason Ravagli} — tiled ViT architecture, embedding cache, trained epoch-7 checkpoint.
+\end{itemize}
+
+\section*{Acknowledgments}
+
+We thank the FREUID Challenge organizers for preparing the dataset and evaluation infrastructure~\cite{freuid2026}.
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+% -------------------------------------------------------------------
+\appendix
+\section{Hyperparameters}
+\label{app:hparams}
+
+\begin{table}[h]
+  \centering
+  \small
+  \begin{tabular}{ll}
+    \toprule
+    Hyperparameter & Value \\
+    \midrule
+    Backbone & DINOv2 ViT-B/14 (\texttt{vit\_base\_patch14\_dinov2.lvd142m}) \\
+    Input resize & $672 \times 896$ px (bicubic) \\
+    Tiling & $3 \times 4$ grid $\to$ 12 tiles of $224 \times 224$ \\
+    Tokens per image & $12 \times 256 = 3072$ \\
+    Token dimension & 768 \\
+    MIL hidden dimension & 256 \\
+    Dropout & 0.25 \\
+    Optimizer & AdamW \\
+    Learning rate & $1 \times 10^{-4}$ \\
+    LR schedule & CosineAnnealingLR \\
+    Fraud loss & BCEWithLogitsLoss, pos\_weight $= 1.36$ \\
+    Domain loss & CrossEntropyLoss (5-class) \\
+    GRL $\lambda_{\max}$ & 1.0 \\
+    GRL warmup $\gamma$ & 10 \\
+    Best checkpoint epoch & 7 \\
+    Protocol & A (85/15 stratified split) \\
+    Batch size (training) & 16 \\
+    Batch size (inference) & 8 documents \\
+    Seed & 42 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Full hyperparameter table.}
+\end{table}
+
+\section{Ablation Notes}
+
+Token whitening (subtracting the spatial mean from each bag) consistently degraded performance across all runs. We hypothesize that whitening removes magnitude information that the attention mechanism relies on to weight patches. Domain adversarial training gave a consistent improvement ($-0.033$ FREUID) over the non-adversarial 25-epoch baseline, confirming that template-agnostic features help generalization.
+
+\end{document}
