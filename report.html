@@ -1,0 +1,702 @@
+<title>Domain Adversarial MIL — FREUID Challenge 2026</title>
+<style>
+/* ── Token system ────────────────────────────────────────────── */
+:root {
+  --ink:        #1B1C1F;
+  --ink-2:      #5A5B5E;
+  --ground:     #F7F6F2;
+  --ground-2:   #EDECEA;
+  --accent:     #1C3F73;
+  --accent-lt:  #2E5DA0;
+  --rule:       #CCCABE;
+  --code-bg:    #EDECEA;
+  --badge-bg:   #D8E8F4;
+  --badge-ink:  #1C3F73;
+
+  --f-display: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+  --f-body:    Georgia, 'Times New Roman', serif;
+  --f-mono:    'SF Mono', 'Cascadia Code', Consolas, 'Courier New', monospace;
+
+  --t0: 0.72rem;
+  --t1: 0.875rem;
+  --t2: 1rem;
+  --t3: 1.125rem;
+  --t4: 1.375rem;
+  --t5: 1.75rem;
+  --t6: 2.15rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ink:       #E0DDD5;
+    --ink-2:     #8A8880;
+    --ground:    #181A1D;
+    --ground-2:  #22242A;
+    --accent:    #5A84BC;
+    --accent-lt: #7AA0D0;
+    --rule:      #2D2E35;
+    --code-bg:   #22242A;
+    --badge-bg:  #182D45;
+    --badge-ink: #7AA0D0;
+  }
+}
+
+:root[data-theme="light"] {
+  --ink:#1B1C1F; --ink-2:#5A5B5E; --ground:#F7F6F2; --ground-2:#EDECEA;
+  --accent:#1C3F73; --accent-lt:#2E5DA0; --rule:#CCCABE;
+  --code-bg:#EDECEA; --badge-bg:#D8E8F4; --badge-ink:#1C3F73;
+}
+
+:root[data-theme="dark"] {
+  --ink:#E0DDD5; --ink-2:#8A8880; --ground:#181A1D; --ground-2:#22242A;
+  --accent:#5A84BC; --accent-lt:#7AA0D0; --rule:#2D2E35;
+  --code-bg:#22242A; --badge-bg:#182D45; --badge-ink:#7AA0D0;
+}
+
+/* ── Reset ───────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: 16px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  max-width: 68ch;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem 6rem;
+}
+
+/* ── Header ──────────────────────────────────────────────────── */
+.paper-header {
+  border-bottom: 2px solid var(--ink);
+  padding-bottom: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.venue {
+  font-family: var(--f-body);
+  font-size: var(--t0);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  margin-bottom: 0.9rem;
+}
+
+.paper-title {
+  font-family: var(--f-display);
+  font-size: var(--t6);
+  font-weight: 400;
+  line-height: 1.2;
+  text-wrap: balance;
+  margin-bottom: 0.65rem;
+}
+
+.authors {
+  font-size: var(--t2);
+}
+
+.paper-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.5rem;
+  margin-top: 0.9rem;
+  font-size: var(--t1);
+  color: var(--ink-2);
+  align-items: center;
+}
+
+.badge {
+  background: var(--badge-bg);
+  color: var(--badge-ink);
+  font-family: var(--f-mono);
+  font-size: var(--t0);
+  padding: 0.2em 0.65em;
+  border-radius: 2px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* ── Section headings ────────────────────────────────────────── */
+h2 {
+  font-family: var(--f-display);
+  font-size: var(--t4);
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 0.65rem;
+  text-wrap: balance;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--rule);
+}
+
+h3 {
+  font-family: var(--f-display);
+  font-size: var(--t3);
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.4rem;
+  text-wrap: balance;
+}
+
+/* ── Body text ───────────────────────────────────────────────── */
+p {
+  margin-top: 0.7rem;
+  font-size: var(--t2);
+  line-height: 1.75;
+}
+
+.sc {
+  font-variant: small-caps;
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+
+.abstract-text {
+  font-size: var(--t1);
+  line-height: 1.82;
+  margin-top: 0.5rem;
+}
+
+.keywords {
+  margin-top: 0.75rem;
+  font-size: var(--t0);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+
+/* ── Formula ─────────────────────────────────────────────────── */
+.formula {
+  background: var(--ground-2);
+  border-left: 3px solid var(--accent);
+  padding: 0.75rem 1.25rem;
+  margin: 0.9rem 0;
+  font-family: var(--f-mono);
+  font-size: var(--t1);
+  overflow-x: auto;
+  white-space: nowrap;
+  line-height: 2;
+}
+
+/* ── Architecture diagram ────────────────────────────────────── */
+.arch-wrap {
+  margin: 1.5rem 0 0.4rem;
+  overflow-x: auto;
+}
+
+.arch-main {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  min-width: max-content;
+}
+
+.arch-box {
+  flex: 0 0 auto;
+  border: 1.5px solid var(--rule);
+  background: var(--ground-2);
+  padding: 0.5rem 0.8rem;
+  font-family: var(--f-mono);
+  font-size: 0.7rem;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.arch-box b {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--ink);
+}
+
+.arch-box span {
+  color: var(--ink-2);
+  font-size: 0.65rem;
+}
+
+.arch-arrow {
+  flex: 0 0 1.75rem;
+  text-align: center;
+  font-size: var(--t1);
+  color: var(--ink-2);
+  user-select: none;
+}
+
+.arch-domain {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 0.5rem;
+  padding-left: calc(3 * 5.5rem + 3 * 1.75rem);
+  min-width: max-content;
+}
+
+.arch-domain-note {
+  font-family: var(--f-mono);
+  font-size: 0.65rem;
+  color: var(--ink-2);
+  letter-spacing: 0.03em;
+  text-align: center;
+  flex: 0 0 1.75rem;
+}
+
+/* ── Tables ──────────────────────────────────────────────────── */
+.tbl-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t1);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  text-align: left;
+  font-family: var(--f-body);
+  font-variant: small-caps;
+  font-size: var(--t0);
+  letter-spacing: 0.05em;
+  color: var(--ink-2);
+  border-bottom: 1.5px solid var(--ink);
+  padding: 0.35rem 0.75rem;
+  white-space: nowrap;
+}
+
+td {
+  padding: 0.42rem 0.75rem;
+  border-bottom: 1px solid var(--rule);
+  line-height: 1.45;
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: none; }
+
+.best td {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── Code blocks ─────────────────────────────────────────────── */
+.code-block {
+  background: var(--code-bg);
+  border: 1px solid var(--rule);
+  padding: 0.9rem 1.1rem;
+  font-family: var(--f-mono);
+  font-size: var(--t0);
+  line-height: 1.72;
+  overflow-x: auto;
+  margin: 0.85rem 0;
+  white-space: pre;
+}
+
+code {
+  font-family: var(--f-mono);
+  font-size: 0.88em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 2px;
+}
+
+/* ── Caption ─────────────────────────────────────────────────── */
+.caption {
+  font-size: var(--t0);
+  color: var(--ink-2);
+  margin-top: 0.35rem;
+  line-height: 1.5;
+}
+
+.fig-n {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* ── Inline list ─────────────────────────────────────────────── */
+ul {
+  margin-top: 0.5rem;
+  padding-left: 1.5rem;
+  font-size: var(--t2);
+  line-height: 1.75;
+}
+
+ul li { margin-top: 0.25rem; }
+
+/* ── Print ───────────────────────────────────────────────────── */
+@media print {
+  :root {
+    --ink: #000; --ink-2: #444; --ground: #fff; --ground-2: #f4f4f4;
+    --accent: #1C3F73; --rule: #bbb; --code-bg: #f0f0f0;
+    --badge-bg: #e0ecf8; --badge-ink: #1C3F73;
+  }
+  body { max-width: none; padding: 0; }
+  .paper-header { page-break-after: avoid; }
+  h2 { page-break-after: avoid; }
+  .arch-wrap, .code-block, .formula, .tbl-wrap { page-break-inside: avoid; }
+}
+
+@media (max-width: 560px) {
+  body { padding: 2rem 1rem 3rem; }
+  .paper-title { font-size: var(--t5); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+
+<!-- ── HEADER ─────────────────────────────────────────────────── -->
+<header class="paper-header">
+  <p class="venue">FREUID Challenge 2026 &nbsp;·&nbsp; Technical Report &nbsp;·&nbsp; Reproducibility Submission</p>
+  <h1 class="paper-title">Domain Adversarial Multiple Instance Learning for Document Fraud Detection</h1>
+  <p class="authors">Jacopo Bartoli</p>
+  <div class="paper-meta">
+    <span>July 2026</span>
+    <span class="badge">FREUID&nbsp;0.068</span>
+    <span class="badge">Public Leaderboard</span>
+    <span>MIT License</span>
+  </div>
+</header>
+
+<!-- ── ABSTRACT ───────────────────────────────────────────────── -->
+<section>
+  <p><span class="sc">Abstract.</span></p>
+  <p class="abstract-text">
+    We present a domain-adversarial multiple instance learning (DA-MIL) system
+    for detecting forged identity documents. Each document is resized to
+    672&nbsp;&times;&nbsp;896 and tiled into a 3&times;4 grid of 224&times;224
+    patches; each tile is passed through a frozen DINOv2 ViT-B/14 backbone,
+    yielding 3&thinsp;072 patch tokens per document. Gated attention pooling
+    identifies the most discriminative tokens and produces a bag embedding.
+    A gradient reversal layer suppresses template-specific cues during training,
+    pushing the representation toward fraud signals that generalize across unseen
+    document templates. On the FREUID Challenge 2026 public test set our best
+    submission achieves a FREUID score of <strong>0.068</strong> under Protocol&nbsp;A.
+  </p>
+  <p class="keywords">
+    <span class="sc">Keywords</span> &mdash;
+    document fraud detection &middot; multiple instance learning &middot;
+    domain adversarial training &middot; vision transformer &middot; DINOv2
+  </p>
+</section>
+
+<!-- ── 1. INTRODUCTION ────────────────────────────────────────── -->
+<section>
+  <h2>1. Introduction</h2>
+  <p>
+    Detecting forged identity documents is challenging because fraud signals are
+    localized visual artefacts &mdash; inconsistent fonts, digital re-printing
+    traces, cloning marks &mdash; that vary in position, scale, and character
+    across document templates. A model that learns template layout rather than
+    fraud-specific texture generalizes poorly to the held-out templates used in
+    competition evaluation.
+  </p>
+  <p>
+    Multiple instance learning (MIL) addresses the localization problem by treating
+    each image as a bag of patch-level tokens and letting an attention mechanism
+    identify which patches are discriminative, without any patch-level annotation.
+    Domain adversarial training then prevents the bag aggregator from exploiting
+    template-specific cues by reversing gradients flowing into a template
+    classifier, so the shared representation is forced toward template-agnostic
+    fraud features.
+  </p>
+</section>
+
+<!-- ── 2. METHOD ──────────────────────────────────────────────── -->
+<section>
+  <h2>2. Method</h2>
+
+  <h3>2.1 Patch Feature Extraction with Tiling</h3>
+  <p>
+    Each document image is resized to
+    <strong>672&nbsp;&times;&nbsp;896</strong>&nbsp;pixels using bicubic
+    interpolation and then split into a 3&times;4 grid of non-overlapping
+    <strong>224&times;224</strong> tiles. This preserves more of the original
+    document resolution compared to a single 224&times;224 resize, retaining
+    fine-grained forensic artefacts that would otherwise be lost.
+  </p>
+  <p>
+    Each tile is independently passed through a <strong>frozen</strong>
+    DINOv2 ViT-B/14 backbone
+    (<code>vit_base_patch14_dinov2.lvd142m</code>, pretrained on LVD-142M by
+    Meta AI). With a patch stride of 14, each tile produces 256 spatial tokens of
+    dimension d&nbsp;=&nbsp;768. The 12 tiles per image are concatenated to form a
+    bag of <strong>N&nbsp;=&nbsp;3&thinsp;072</strong> tokens per document. The
+    <code>[CLS]</code> token of each tile is discarded; only patch tokens are
+    retained. The backbone weights are not updated during training.
+  </p>
+
+  <h3>2.2 Gated Attention MIL</h3>
+  <p>
+    Given a bag H&nbsp;=&nbsp;{h<sub>1</sub>,&nbsp;&hellip;,&nbsp;h<sub>N</sub>}
+    &isin;&nbsp;&#x211D;<sup>N&times;d</sup>, gated attention weights are
+    computed as:
+  </p>
+  <div class="formula">a<sub>k</sub> = softmax<sub>k</sub>( w<sup>T</sup> [tanh(Vh<sub>k</sub>) &odot; &sigma;(Uh<sub>k</sub>)] )</div>
+  <p>
+    The bag embedding <strong>z</strong>&nbsp;=&nbsp;&Sigma;<sub>k</sub>&nbsp;a<sub>k</sub>&nbsp;h<sub>k</sub>
+    is a weighted sum that concentrates on the most discriminative patches.
+    A linear classification head followed by a sigmoid produces the fraud
+    probability. The MIL aggregator uses hidden dimension 256 and dropout 0.25.
+  </p>
+
+  <h3>2.3 Domain Adversarial Training</h3>
+  <p>
+    Template-specific biases are suppressed via a gradient reversal layer (GRL;
+    Ganin et al.&nbsp;2016) placed between the bag embedding <strong>z</strong>
+    and a domain classification head. The GRL acts as the identity in the forward
+    pass and negates gradients scaled by &lambda; in the backward pass, causing
+    <strong>z</strong> to become uninformative for template prediction while
+    remaining useful for fraud detection. The total training loss is:
+  </p>
+  <div class="formula">&#x2112; = &#x2112;<sub>fraud</sub>  +  &#x2112;<sub>domain</sub></div>
+  <p>
+    To avoid destabilizing early training, &lambda; follows a sigmoid warmup schedule:
+  </p>
+  <div class="formula">&lambda;(p)  =  &lambda;<sub>max</sub> &middot; ( 2&nbsp;/&nbsp;(1&nbsp;+&nbsp;e<sup>&minus;&gamma;p</sup>)&nbsp;&minus;&nbsp;1 )</div>
+  <p>
+    where p&nbsp;&isin;&nbsp;[0,&nbsp;1] is fractional training progress,
+    &gamma;&nbsp;=&nbsp;10, &lambda;<sub>max</sub>&nbsp;=&nbsp;1.0. At epoch&nbsp;1
+    (&asymp;&nbsp;p&nbsp;=&nbsp;0.04) &lambda;&nbsp;&asymp;&nbsp;0.38; by
+    epoch&nbsp;25 it reaches 1.0. At <strong>inference time</strong>
+    &lambda;&nbsp;=&nbsp;0: the domain head is inactive and the model runs as a
+    standard attention MIL classifier.
+  </p>
+
+  <!-- Architecture diagram -->
+  <div class="arch-wrap" role="img" aria-label="DA-MIL pipeline diagram">
+    <div class="arch-main">
+      <div class="arch-box"><b>Image</b><span>224&times;224</span></div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-box"><b>DINOv2</b><span>ViT-B/14 frozen</span></div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-box"><b>Tokens</b><span>256&nbsp;&times;&nbsp;768</span></div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-box"><b>Attn&nbsp;MIL</b><span>bag z, 256-d</span></div>
+      <div class="arch-arrow">&rarr;</div>
+      <div class="arch-box"><b>Cls Head</b><span>&sigma;(fc(z)) &rarr; score</span></div>
+    </div>
+    <div class="arch-domain">
+      <div class="arch-domain-note">&darr;&uarr;&nbsp;GRL<br>(train only)</div>
+      <div class="arch-arrow">&nbsp;</div>
+      <div class="arch-box"><b>Domain Head</b><span>5-class template CE</span></div>
+    </div>
+  </div>
+  <p class="caption">
+    <span class="fig-n">Figure 1.</span>
+    DA-MIL pipeline. The GRL branches off the bag embedding <strong>z</strong>
+    only during training (&lambda;&nbsp;&gt;&nbsp;0).
+  </p>
+</section>
+
+<!-- ── 3. TRAINING ─────────────────────────────────────────────── -->
+<section>
+  <h2>3. Training Setup</h2>
+  <p>
+    We train under Protocol&nbsp;A: an 85&nbsp;/&nbsp;15 stratified split of
+    the FREUID training corpus, stratified by document template and label. The
+    validation split is used for early stopping; the best checkpoint by
+    validation FREUID score is retained. For efficiency, DINOv2 features are
+    extracted once and cached per sample to disk; the MIL head is the only
+    module that receives gradient updates.
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Hyperparameter</th>
+          <th>Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Backbone</td><td><code>vit_base_patch14_dinov2.lvd142m</code></td></tr>
+        <tr><td>Input resize</td><td>672 &times; 896 px (bicubic)</td></tr>
+        <tr><td>Tiling</td><td>3 &times; 4 grid → 12 tile da 224 &times; 224</td></tr>
+        <tr><td>Tokens per image (N)</td><td>12 tile &times; 256 = 3&thinsp;072 token per documento</td></tr>
+        <tr><td>Token dimension (d)</td><td>768</td></tr>
+        <tr><td>MIL hidden dimension</td><td>256</td></tr>
+        <tr><td>Dropout</td><td>0.25</td></tr>
+        <tr><td>Optimizer</td><td>AdamW</td></tr>
+        <tr><td>Learning rate</td><td>1 &times; 10<sup>&minus;4</sup></td></tr>
+        <tr><td>LR schedule</td><td>CosineAnnealingLR</td></tr>
+        <tr><td>Fraud loss</td><td>BCEWithLogitsLoss, pos_weight&nbsp;=&nbsp;1.36</td></tr>
+        <tr><td>Domain loss</td><td>CrossEntropyLoss (5-class template)</td></tr>
+        <tr><td>&lambda; warmup &gamma;</td><td>10</td></tr>
+        <tr><td>&lambda;<sub>max</sub></td><td>1.0</td></tr>
+        <tr><td>Epochs</td><td>25</td></tr>
+        <tr><td>Data split</td><td>Protocol A (85 / 15 stratified)</td></tr>
+        <tr><td>Hardware</td><td>Nvidia GTX 1650 4&thinsp;GB (CUDA 12.8)</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption"><span class="fig-n">Table 1.</span> Training hyperparameters.</p>
+</section>
+
+<!-- ── 4. INFERENCE ────────────────────────────────────────────── -->
+<section>
+  <h2>4. Inference</h2>
+  <p>
+    At inference time &lambda;&nbsp;=&nbsp;0 (domain head disabled). Each image
+    is resized to 672&nbsp;&times;&nbsp;896 with bicubic interpolation and
+    normalized with ImageNet statistics
+    (&mu;&nbsp;=&nbsp;[0.485, 0.456, 0.406], &sigma;&nbsp;=&nbsp;[0.229, 0.224, 0.225]).
+    The image is tiled into a 3&times;4 grid of 224&times;224 patches; all 12
+    tiles are passed through the frozen DINOv2 backbone in a single batched
+    forward pass, producing 3&thinsp;072 patch tokens. The attention MIL head
+    aggregates them and outputs a fraud probability in [0,&nbsp;1] via sigmoid.
+  </p>
+  <p>
+    The Docker inference container reads all images under <code>/data/</code>
+    (recursively, by extension), scores them in batches of 32, and writes
+    <code>/submissions/submission.csv</code> with columns <code>id</code>
+    (filename stem) and <code>label</code> (fraud score). It runs fully offline
+    (<code>--network none</code>): DINOv2 weights and the trained checkpoint
+    are bundled in the image. The inference script is resume-friendly &mdash;
+    if interrupted, it detects already-scored IDs and continues without
+    re-scoring.
+  </p>
+</section>
+
+<!-- ── 5. RESULTS ──────────────────────────────────────────────── -->
+<section>
+  <h2>5. Results</h2>
+  <p>
+    The FREUID competition metric is defined as:
+  </p>
+  <div class="formula">FREUID  =  1 &minus; 2 &middot; g<sub>AuDET</sub> &middot; g<sub>APCER</sub> / (g<sub>AuDET</sub> + g<sub>APCER</sub>)</div>
+  <p>
+    where g<sub>AuDET</sub> is the genuine authentication detection rate and
+    g<sub>APCER</sub>&nbsp;=&nbsp;1&nbsp;&minus;&nbsp;APCER is the attack
+    detection rate. Lower is better; 0 is perfect.
+  </p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Method</th>
+          <th>Epochs</th>
+          <th>FREUID (Public)</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>AttentionMIL baseline</td><td>5</td><td>0.245</td><td>No domain adversarial, 224×224</td></tr>
+        <tr><td>AttentionMIL + token whitening</td><td>5</td><td>0.308</td><td>Whitening hurts generalization</td></tr>
+        <tr><td>AttentionMIL + token whitening</td><td>25</td><td>0.280</td><td>&mdash;</td></tr>
+        <tr><td>AttentionMIL baseline</td><td>25</td><td>0.228</td><td>Longer training helps</td></tr>
+        <tr><td>DA-MIL (no tiling)</td><td>25</td><td>0.195</td><td>Domain adversarial, 224×224</td></tr>
+        <tr class="best"><td>DA-MIL + tiling (ours)</td><td>7</td><td>0.068</td><td>672×896 → 12 tile, epoch-7 ckpt ★</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">
+    <span class="fig-n">Table 2.</span> Public leaderboard FREUID scores.
+    All runs use Protocol&nbsp;A, fold&nbsp;0. Best row in bold.
+  </p>
+
+  <p>
+    The most significant improvement comes from tiling: preserving document
+    resolution at 672&times;896 and splitting into 12 tiles
+    (&minus;0.127 FREUID vs. DA-MIL without tiling). With only 7 epochs of
+    training the tiled model already outperforms all single-scale baselines,
+    suggesting that the extra resolution is the dominant factor for this task.
+    Domain adversarial training and token whitening both show diminishing returns
+    relative to the resolution gain; whitening consistently hurt across all runs.
+  </p>
+</section>
+
+<!-- ── 6. EXTERNAL RESOURCES ──────────────────────────────────── -->
+<section>
+  <h2>6. External Resources</h2>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Resource</th>
+          <th>Source</th>
+          <th>License</th>
+          <th>Use</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>DINOv2 ViT-B/14<br><code>vit_base_patch14_dinov2.lvd142m</code></td>
+          <td>Meta AI, via timm&nbsp;/&nbsp;HuggingFace Hub<br>Pretrained on LVD-142M</td>
+          <td>Apache&nbsp;2.0</td>
+          <td>Frozen patch feature extractor</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <p class="caption">
+    <span class="fig-n">Table 3.</span> Pretrained models used. No additional
+    training data beyond the provided FREUID corpus was used.
+  </p>
+
+  <p>
+    No other pretrained weights, external datasets, or closed-license components
+    are used. The project source code is released under the MIT License.
+  </p>
+</section>
+
+<!-- ── 7. REPRODUCTION ─────────────────────────────────────────── -->
+<section>
+  <h2>7. Reproduction</h2>
+
+  <h3>7.1 Requirements</h3>
+  <ul>
+    <li>Python 3.10+, PyTorch 2.x, CUDA-capable GPU (tested on GTX 1650 4&thinsp;GB and RTX 3060)</li>
+    <li>Dependencies: <code>timm</code>, <code>pandas</code>, <code>tqdm</code>, <code>Pillow</code>, <code>torchvision</code></li>
+    <li>Docker with <code>--gpus all</code> support (for the inference container)</li>
+  </ul>
+
+  <h3>7.2 Training from Scratch</h3>
+  <p>
+    <code>train_online.py</code> extracts DINOv2 features on-the-fly (no
+    pre-caching required). It reads raw images directly and runs the full DA-MIL
+    training loop end-to-end.
+  </p>
+  <div class="code-block">git clone &lt;repository-url&gt;
+cd freuid
+
+# Generate metadata.csv (maps image paths to labels and templates)
+python scripts/prepare_metadata.py --data-dir /path/to/freuid_data
+
+# Train DA-MIL — approximately 90 min on an RTX 3060
+python scripts/train_online.py \
+    --data-dir /path/to/freuid_data \
+    --epochs 25 \
+    --lr 1e-4
+
+# Best checkpoint saved to:
+# results/checkpoints/mil/a/da_full/fold0_best.pt</div>
+
+  <h3>7.3 Docker Inference (Offline)</h3>
+  <p>
+    The Docker image bundles all weights and runs without network access.
+    It maps <code>/data/</code> &rarr; test images (read-only),
+    <code>/submissions/</code> &rarr; output directory.
+  </p>
+  <div class="code-block"># Build image (copies DINOv2 weights from HuggingFace cache)
+bash docker_build.sh
+
+# Run inference
+docker run --gpus all --network none \
+    -v /path/to/test/images:/data:ro \
+    -v /path/to/output:/submissions \
+    freuid-inference:latest
+
+# Output: /path/to/output/submission.csv  (columns: id, label)</div>
+
+  <p>
+    The repository is available at commit
+    <code>[COMMIT SHA &mdash; update after final push]</code>,
+    released under the MIT License (Copyright 2026 Jacopo Bartoli).
+  </p>
+</section>

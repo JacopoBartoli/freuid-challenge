@@ -1,0 +1,16 @@
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+dist/
+build/
+.env
+*.dat
+*.jsonl
+data/
+results/
+docker_weights/
+mlruns/
+.DS_Store
