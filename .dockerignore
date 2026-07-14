@@ -1,6 +1,5 @@
 data/
 results/
-docker_weights/
 .venv/
 __pycache__/
 *.pyc
