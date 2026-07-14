@@ -43,7 +43,7 @@ HF_CACHE    = Path("/model/dinov2")
 _IMAGENET_MEAN = (0.485, 0.456, 0.406)
 _IMAGENET_STD  = (0.229, 0.224, 0.225)
 
-IMG_EXTENSIONS = {".jpeg", ".jpg", ".png", ".bmp"}
+IMG_EXTENSIONS = {".jpeg", ".jpg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
 
 
 def apply_tiling(x: torch.Tensor) -> torch.Tensor:

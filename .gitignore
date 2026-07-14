@@ -11,6 +11,9 @@ build/
 *.jsonl
 data/
 results/
+docker-starter-kit/
+technical-report/
+docker_weights/
 docker_weights/
 mlruns/
 .DS_Store
