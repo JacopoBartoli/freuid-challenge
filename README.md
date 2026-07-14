@@ -28,6 +28,17 @@ python scripts/train_online.py --data-dir /path/to/freuid_data --epochs 25
 # Best checkpoint → results/checkpoints/online/<run>/best.pt
 ```
 
+## Checkpoint
+
+The trained MIL head (epoch-7, FREUID 0.068) is included in the repo at
+`checkpoints/epoch-7.pt` (1.7 MB — only the MIL head is saved; the DINOv2
+backbone weights are frozen and not stored).
+
+To run inference standalone (outside Docker):
+```bash
+python scripts/infer.py  # inside the container, or adapt paths for local use
+```
+
 ## Docker inference (offline)
 
 The Docker image bundles DINOv2 weights and the trained checkpoint.

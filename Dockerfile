@@ -20,7 +20,7 @@ COPY scripts/infer.py scripts/infer.py
 COPY docker_weights/dinov2/ /model/dinov2/
 
 # Checkpoint del modello migliore (tiled ViT, epoch-7)
-COPY results/collegue-checkpoint/epoch-7.pt /model/checkpoint.pt
+COPY checkpoints/epoch-7.pt /model/checkpoint.pt
 
 ENV PYTHONPATH=/app/src
 ENV HF_HOME=/model/dinov2
