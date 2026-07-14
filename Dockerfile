@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Dipendenze Python (installate durante il build, con rete)
 COPY pyproject.toml .
-RUN pip install --no-cache-dir timm pandas tqdm Pillow torchvision
+RUN pip install --no-cache-dir --break-system-packages timm pandas tqdm Pillow torchvision
 
 # Codice sorgente
 COPY src/ src/
